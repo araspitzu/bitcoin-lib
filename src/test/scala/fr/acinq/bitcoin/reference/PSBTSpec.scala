@@ -121,4 +121,32 @@ class PSBTSpec extends FlatSpec {
 
   }
 
+  "Signatures" should "equal those produced by bitcoind" in {
+    val bitcoindSigScript = BinaryData("0047304402201aaadac2eade5e3aa0d77ad788f7e98b868016dfc063f902bf8633fa4fa1696102205b419ff65d661b851ef406c89b7cdcd808617c3518f1ce01723c640d3a3418280147304402202f791e50d7f0f2ff991a1c5f669918e0c44b24d8904470d831e3cde28d6b1dc80220678392831b0cd670aa4834e2f0e96268caee33c06c8f283319073bb89b47b84901475221029583bf39ae0a609747ad199addd634fa6108559d6c5cd39b4c2183f1ab96e07f2102dab61ff49a14db6a7d02b0cd1fbb78fc4b18312b5b4e54dae4dba2fbfef536d752ae")
+    val redeemScript = BinaryData("5221029583bf39ae0a609747ad199addd634fa6108559d6c5cd39b4c2183f1ab96e07f2102dab61ff49a14db6a7d02b0cd1fbb78fc4b18312b5b4e54dae4dba2fbfef536d752ae")
+    val amount = 10 btc
+    val priv1 = PrivateKey.fromBase58("cP53pDbR5WtAD8dYAW9hhTjuvvTVaEiQBdrz9XPrgLBeRFiyCbQr", Base58.Prefix.SecretKeyTestnet)
+    val priv2 = PrivateKey.fromBase58("cT7J9YpCwY3AVRFSjN6ukeEeWY6mhpbJPxRaDaP5QTdygQRxP9Au", Base58.Prefix.SecretKeyTestnet)
+
+    val prevTx = Transaction.read("02000000019c2c4e7068de70dc0d9205b4828d0652541294e0b3d85fb3a9fe5f4c4e5873a60000000048473044022055456502ebfa9af1862c2328bd214f8c3fceca4a8d691f5f50136f8a14e1ecff02204f358bb078e8a202ebed91f8844e622ca21f86ceed276c7164f4c6e303d4db1401feffffff0200ca9a3b0000000017a9140fb9463421696b82c833af241c78c17ddbde493487e4a3e60e0000000017a9143d3c0f96f187c20cfb01f22c8e326dc612dc9718873a020000")
+
+    val spendingTx = Transaction(
+      version = 2,
+      txIn = TxIn(OutPoint(prevTx, 0), sequence = 0xffffffffL, signatureScript = Nil) :: Nil,
+      txOut = TxOut(amount, BinaryData("a9143454e2293ed9790e578ae1353ffe1ef1d4a6b34a87")) :: Nil,
+      lockTime = 0
+    )
+
+    val sig = Transaction.signInput(spendingTx, 0, redeemScript, SIGHASH_ALL, amount, SigVersion.SIGVERSION_BASE, priv1)
+    val sig1 = Transaction.signInput(spendingTx, 0, redeemScript, SIGHASH_ALL, amount, SigVersion.SIGVERSION_BASE, priv2)
+
+    println(s"SIG: $sig")
+    println(s"[non-matching signature]SIG1: $sig1")
+
+    val sigScript = OP_0 :: OP_PUSHDATA(sig) :: OP_PUSHDATA(sig1) :: OP_PUSHDATA(redeemScript) :: Nil
+
+    assert(Script.write(sigScript) == bitcoindSigScript)
+
+  }
+
 }
