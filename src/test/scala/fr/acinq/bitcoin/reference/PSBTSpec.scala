@@ -137,6 +137,8 @@ class PSBTSpec extends FlatSpec {
       lockTime = 0
     )
 
+    assert(spendingTx.txid.toString == "aa3c0b069e8a8571e2417cfe1140f2d8040f85d12b10ac01b4dcd29e6120bf11")
+
     val sig = Transaction.signInput(spendingTx, 0, redeemScript, SIGHASH_ALL, amount, SigVersion.SIGVERSION_BASE, priv1)
     val sig1 = Transaction.signInput(spendingTx, 0, redeemScript, SIGHASH_ALL, amount, SigVersion.SIGVERSION_BASE, priv2)
 
